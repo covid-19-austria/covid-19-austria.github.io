@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-40854243-1"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'UA-40854243-1');
+    </script>
+
+    <meta charset="UTF-8">
+    <link rel="shortcut icon" type="image/png" href="https://covid-19-austria.github.io/static/images/favicon.png">
+    <title>COVID-19 LIVE</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-fork-ribbon-css/0.2.3/gh-fork-ribbon.min.css" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ScrollToFixed/1.0.8/jquery-scrolltofixed-min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/d3js/5.15.0/d3.min.js"></script>
+    <script src="https://d3js.org/topojson.v2.min.js"></script>
+    <script src="https://d3js.org/d3-geo.v1.min.js"></script>
+    <script src="https://unpkg.com/d3-regression@1.3.4/dist/d3-regression.min.js"></script>
+
+    <script src="calculation.js"></script>
+
+    <style>
+        #date-slider {
+            width: 95%;
+        }
+        #date-slider-text {
+            /*color: rgb(47, 81, 132);*/
+            font-weight: bold;
+        }
+        ul#event-list li {
+            display:inline;
+            font-size: 85%;
+            padding-left: 15px;
+        }
+        #event-list  a {
+            color: rgb(49, 83, 133)
+        }
+    </style>
+</head>
+<body class="bg-light">
+<a class="github-fork-ribbon left-top" target="_blank" href="https://github.com/covid-19-austria/covid-19-austria.github.io" data-ribbon="Fork me on GitHub" title="Fork me on GitHub">Fork me on GitHub</a>
+
+<div class="container">
+    <div class="py-2 text-center">
+        <h3>COVID-19 in Österreich</h3>
+        <small>Letztes Update: <span id="last-update-text">-</span></small>
+    </div>
+    <div class="py-3 text-center" id="container-austria-map"></div>
+
+    <div class="dropdown" style="text-align: right; width: 95%;">
+        <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="map-type-dropdown">Bestätigte Infektionen</button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton" id="map-type-dropdown-selection">
+            <a class="dropdown-item" selection-type="sum">Bestätigte Infektionen</a>
+            <a class="dropdown-item" selection-type="sum_100k">Gesamte Infektionen pro 100.000 Einwohner</a>
+            <!--
+            <a class="dropdown-item" selection-type="active_100k">Aktive Infektionen pro 100.000 Einwohner</a>
+            -->
+            <a class="dropdown-item" selection-type="died">Todesfälle</a>
+        </div>
+    </div>
+
+
+    <div class="pt-2 text-center" id="container-date-slider">
+        <div id="date-slider-text">-</div>
+        <input type="range" min="0" max="10" value="10" class="slider" id="date-slider">
+        <ul id="event-list">
+            <li>&bull; <a href="javascript:jump_to_selection(19);">Ausgangsbeschränkungen (16.03.2020)</a></li>
+            <li>&bull; <a href="javascript:jump_to_selection(48);">Erste Lockerungen (14.04.2020)</a></li>
+            <li>&bull; <a href="javascript:jump_to_selection(65);">Aufhebung der Ausgangsbeschränkung (01.05.2020)</a></li>
+        </ul>
+    </div>
+
+
+    <div class="row">
+        <div class="col">
+            <div class="py-3 text-center" id="container-population"></div>
+        </div>
+        <div class="col">
+            <div class="pt-3 text-center"><h6>Gesamtübersicht</h6></div>
+
+            <div class="pb-3 text-center" id="container-graph-main"></div>
+            <!--
+              <div class="dropdown" style="text-align: center;">
+              <button class="btn btn-secondary btn-sm dropdown-toggle" style="margin-left: 1em" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="scatter-tourism-dropdown">Österreich</button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                  <a class="dropdown-item" selection-type="sleepOvers">Österreich</a>
+                  <a class="dropdown-item" selection-type="arrivals">Bundesländer</a>
+                </div>
+              </div>
+            -->
+
+            <div class="pt-3 text-center"><h6>Postive Infektionen / Durchgeführte Tests</h6></div>
+            <div class="pb-3 text-center" id="container-graph-tests"></div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col text-center">
+            <h3>Analyse von Zusammenhängen</h3>
+          <div class="dropdown">
+              Y-Achse:  <button class="btn btn-secondary btn-sm dropdown-toggle" style= "margin-left:1em" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="scatter-type-dropdown">Bestätigte Infektionen</button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton" id="scatter-type-dropdown-selection">
+                    <a class="dropdown-item" selection-type="sum">Bestätigte Infektionen</a>
+                    <a class="dropdown-item" selection-type="sum_100k">Gesamte Infektionen pro 100.000 Einwohner</a>
+                    <a class="dropdown-item" selection-type="died">Todesfälle</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col">
+            <div class="pt-3 text-center"><h6>Demografie</h6></div>
+            <div class="text-center" id="container-scatter-comparison-demo"></div>
+
+          <div class="dropdown" style="text-align: right; width: 95%;margin-bottom: 0.5em">
+            X-Achse: <button class="btn btn-secondary btn-sm dropdown-toggle" style="margin-left: 1em" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="scatter-demo-dropdown">Durchschnittsalter</button>
+            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton" id="scatter-demo-dropdown-selection">
+              <a class="dropdown-item" selection-type="averageAge">Durchschnittsalter</a>
+            </div>
+          </div>
+
+            <div style="text-align: left; margin-left: 2em; margin-top: 1em ; margin-bottom: 0.5em">
+                <b>Spearman: </b><span id="spearman-coeff-input-demo"></span>
+            </div>
+            <div style="text-align: left; margin-left: 2em">
+              <b>Pearson: </b><span id="pearson-coeff-input-demo"></span>
+            </div>
+        </div>
+        <div class="col">
+            <div class="pt-3 text-center"><h6>Tourismus</h6></div>
+            <div class="text-center" id="container-scatter-comparison"></div>
+
+          <div class="dropdown" style="text-align: right; width: 95%;margin-bottom: 0.5em">
+            X-Achse: <button class="btn btn-secondary btn-sm dropdown-toggle" style="margin-left: 1em" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="scatter-tourism-dropdown">Übernachtungen</button>
+            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton" id="scatter-tourism-dropdown-selection">
+              <a class="dropdown-item" selection-type="sleepOvers">Übernachtungen</a>
+              <a class="dropdown-item" selection-type="arrivals">Ankünfte</a>
+              <a class="dropdown-item" selection-type="accommodations">Unterkünfte</a>
+            </div>
+          </div>
+
+            <div id="spearman-coeff" style="text-align: left; margin-left: 2em; margin-top: 1em ; margin-bottom: 0.5em">
+                <b>Spearman: </b><span id="spearman-coeff-input"></span>
+            </div>
+            <div id="pearson-coeff" style="text-align: left; margin-left: 2em">
+              <b>Pearson: </b><span id="pearson-coeff-input"></span>
+            </div>
+        </div>
+    </div>
+
+
+    <footer class="my-5 text-muted text-center text-small">
+        <p class="mb-1">&copy; 2020 <a target="_blank" href="https://github.com/covid-19-austria">github/covid-19-austria</a></p>
+        <ul class="list-inline">
+            <li class="list-inline-item"><a target="_blank" href="https://github.com/doctorseus">github/doctorseus</a></li>
+            <li class="list-inline-item"><a target="_blank" href="https://github.com/VCPY">github/VCPY</a></li>
+        </ul>
+    </footer>
+</div>
+
+<script>
+    // Make date slider floating
+    $('#container-date-slider').scrollToFixed({
+        preFixed: function() { $(this).css('background-color', '#f8f9fa').css('border-bottom', '1px solid #5a5a5a'); },
+        postFixed: function() { $(this).css('background-color', 'none').css('border-bottom', 'none'); }
+    });
+
+    let jump_to_selection = function() {} // Initialize with empty function
+
+    let url_image_base = 'https://covid-19-austria.github.io/static/images/';
+    let urls = {
+        data: 'https://gist.githubusercontent.com/covid19bot/afaf078fb3d7543085a0e71f33f5491c/raw/covid19_statistics_austria.json',
+        // data: 'covid_data.json',
+        map: 'https://raw.githubusercontent.com/ginseng666/GeoJSON-TopoJSON-Austria/master/2017/simplified-95/laender_95_topo.json',
+        tourism: 'tourism_data.json',
+        demographics: 'demographics_data.json'
+    };
+
+    let promises = [];
+
+    for (let key in urls) {
+        let req = d3.json(urls[key]);
+        promises.push(req);
+    }
+
+    function ctx_responsive(g, ctx) {
+        return function responsive(svg) {
+            let container = d3.select(svg.node().parentNode);
+
+            ctx.resize = function resize() {
+                let aspect = g.width / g.height;
+
+                function refit() {
+                    let targetWidth = parseInt(container.style("width"));
+                    svg.attr("width", targetWidth);
+                    svg.attr("height", Math.round(targetWidth / aspect));
+                }
+
+                svg.attr("viewBox", "0 0 " + g.width + " " + g.height)
+                    .attr("perserveAspectRatio", "xMinYMid")
+                    .call(refit);
+            };
+
+            d3.select(window).on("resize." + container.attr("id"), ctx.resize);
+        };
+    }
+
+    let config = {
+        selection: -1,
+
+        prediction_days: 7,
+        map_type_selection: 'sum',
+        scatter_type_selection: 'sum',
+        scatter_tourism_selection: 'sleepOvers',
+        scatter_demo_selection: 'averageAge',
+    };
+
+    let laender_info = [{
+            'name': 'Burgenland',
+            'population': 294466,
+        },
+        {
+            'name': 'Kärnten',
+            'population': 561390,
+        },
+        {
+            'name': 'Niederösterreich',
+            'population': 1684623,
+        },
+        {
+            'name': 'Oberösterreich',
+            'population': 1490392,
+        },
+        {
+            'name': 'Salzburg',
+            'population': 558479,
+        },
+        {
+            'name': 'Steiermark',
+            'population': 1246676,
+        },
+        {
+            'name': 'Tirol',
+            'population': 757852,
+        },
+        {
+            'name': 'Vorarlberg',
+            'population': 397094,
+        },
+        {
+            'name': 'Wien',
+            'population': 1911728,
+        }
+    ];
+
+    let ctx = {
+        map: {},
+        pop: {},
+        g_main: {},
+        g_tests: {},
+        g_compare: {},
+        g_compare_demo: {}
+    };
+
+    let graphics = {
+        map: {
+            svg: d3.select('#container-austria-map').append('svg'),
+            width: 700,
+            height: 370
+        },
+        pop: {
+            svg: d3.select('#container-population').append('svg'),
+            width: 570,
+            height: 900
+        },
+        g_main: {
+            svg: d3.select('#container-graph-main').append('svg'),
+            width: 510,
+            height: 350
+        },
+        g_tests: {
+            svg: d3.select('#container-graph-tests').append('svg'),
+            width: 510,
+            height: 350
+        },
+        g_compare: {
+            svg: d3.select('#container-scatter-comparison').append('svg'),
+            width: 510,
+            height: 350
+        },
+        g_compare_demo: {
+            svg: d3.select('#container-scatter-comparison-demo').append('svg'),
+            width: 510,
+            height: 350
+        }
+    };
+
+    function svg_init() {
+        graphics.map.svg.attr('width', graphics.map.width).attr('height', graphics.map.height).attr('style', 'max-width: 700px; max-height: 350px;').call(ctx_responsive(graphics.map, ctx.map));
+        graphics.pop.svg.attr('width', graphics.pop.width).attr('height', graphics.pop.height).call(ctx_responsive(graphics.pop, ctx.pop));
+        graphics.g_main.svg.attr('width', graphics.g_main.width).attr('height', graphics.g_main.height).call(ctx_responsive(graphics.g_main, ctx.g_main));
+        graphics.g_tests.svg.attr('width', graphics.g_tests.width).attr('height', graphics.g_tests.height).call(ctx_responsive(graphics.g_tests, ctx.g_tests));
+        graphics.g_compare.svg.attr('width', graphics.g_compare.width).attr('height', graphics.g_compare.height).call(ctx_responsive(graphics.g_compare, ctx.g_compare));
+        graphics.g_compare.svg.attr('width', graphics.g_compare.width).attr('height', graphics.g_compare.height).call(ctx_responsive(graphics.g_compare, ctx.g_compare));
+        graphics.g_compare_demo.svg.attr('width', graphics.g_compare_demo.width).attr('height', graphics.g_compare_demo.height).call(ctx_responsive(graphics.g_compare_demo, ctx.g_compare_demo));
+    }
+
+    function svg_f_add_manikin(svg, xy, scale=[1, 1], bcolor='black', scolor='black') {
+        let mgroup = svg.append("g")
+            .attr('transform', `translate(${xy[0]} ${xy[1]}) scale(${80 * scale[0]}, ${75 * scale[1]})`)
+            .attr('fill', bcolor)
+            .attr('stroke', scolor)
+            .attr('stroke-width', '.005');
+        mgroup.append('path')
+            .attr('d', 'm0.0039762 0.10772v0.0894c0 8e-3 7e-3 0.0145 0.0143 0.0147 0.01 2.3e-4 0.0149-7e-3 0.0149-0.015v-0.0789c0.0010001 0.0722 5.6992e-4 0.15166 5.6013e-4 0.21548 0 9e-3 7e-3 0.0154 0.0154 0.0154 9e-3 0 0.0169-7e-3 0.0169-0.0154v-0.11682h6.9003e-4v0.11682c0 9e-3 8e-3 0.0154 0.0167 0.0154 9e-3 0 0.0154-7e-3 0.0154-0.0154v-0.21539c4.4e-4 0.0208 4.1011e-4 0.0549 4.1011e-4 0.0792 0 8e-3 6e-3 0.0147 0.0151 0.0147 7e-3 0 0.0143-6e-3 0.0143-0.0147v-0.0885c-2e-3 -0.0278-0.0459-0.0355-0.0628-0.0356-0.0304 5.1999e-4 -0.059 0.0144-0.0618 0.0346z');
+        mgroup.append('circle')
+            .attr('cx', '.066952')
+            .attr('cy', '.037228')
+            .attr('r', '.033287')
+            .attr('stroke-linecap', 'round');
+    }
+
+    function svg_map_draw(data_geo, data_input, config) {
+        let svg = graphics.map.svg;
+
+        let width = graphics.map.width;
+        let height = graphics.map.height;
+
+        let topology = data_geo;
+
+        let geojson = topojson.feature(topology, topology.objects.laender);
+
+        let bounds = d3.geoBounds(geojson);
+        let center = d3.geoCentroid(geojson);
+        // Correct center
+        center[1] = center[1] * 1.000;
+        center[0] = center[0] * 0.95;
+
+
+        let distance = d3.geoDistance(bounds[0], bounds[1]);
+        let scale = (height / distance) * 1.34; // Correct scale
+
+        let projection = d3.geoMercator().translate([width / 2, height / 2]);
+        let pathGenerator = d3.geoPath().projection(projection);
+
+
+        ctx.map.projection = projection.scale(scale).center(center);
+
+        ctx.map.austria_border = svg.append("g").append('path')
+                .attr("fill", "black")
+                .attr("stroke", "#fff")
+                .attr("stroke-width", ".6px")
+                .style("filter", "drop-shadow( 3px 3px 6px rgba(0, 0, 0, .2))")
+                .attr('d', d3.geoPath().projection(projection)(topojson.mesh(topology, topology.objects.laender, function(a, b) {
+                    return a === b;
+                })));
+
+        ctx.map.laender = svg.append("g")
+            .selectAll('path')
+            .data(geojson.features)
+            .join('g');
+
+        ctx.map.laender_border = ctx.map.laender.append('path')
+                .attr("fill", 'grey')
+                .attr("stroke", "#fff")
+                .attr("stroke-width", ".8px")
+                .attr('d', pathGenerator);
+
+        ctx.map.laender_text = ctx.map.laender.append('text')
+                .attr("fill", "black")
+                .attr("font-family", "sans-serif")
+                .attr("font-size", "13")
+                //.attr("filter", "drop-shadow( 3px 3px 2px rgba(0, 0, 0, .7))")
+                //.attr("stroke", "#000000")
+                //.attr("stroke-width", "0.01px")
+                .attr("text-anchor", "end");
+
+        m_off = [20, 10];
+        svg_f_add_manikin(svg, [m_off[0] + 0, m_off[1] + 1], [0.9, 0.9], 'white', '#212028');
+        svg_f_add_manikin(svg, [m_off[0] + 0, m_off[1] + 36], [0.9, 0.9], 'lightgrey', '#212028');
+        svg_f_add_manikin(svg, [m_off[0] + 0, m_off[1] + 71], [0.9, 0.9], '#ff3801', '#212028');
+        svg_f_add_manikin(svg, [m_off[0] + 0, m_off[1] + 106], [0.9, 0.9], '#ffea14', '#212028');
+
+        ctx.map.text_num = svg.append('text')
+                .attr('transform', `translate(${m_off[0] + 20} ${m_off[1] + 18 + (35 * 0)})`)
+                .attr("fill", "#212028")
+                .attr("font-size", "14")
+                .text('Bestätigte: -');
+
+        ctx.map.text_recovered = svg.append('text')
+                .attr('transform', `translate(${m_off[0] + 20} ${m_off[1] + 18 + (35 * 1)})`)
+                .attr("fill", "#212028")
+                .attr("font-size", "14")
+                .text('Genesene: -');
+
+        ctx.map.text_died = svg.append('text')
+                .attr('transform', `translate(${m_off[0] + 20} ${m_off[1] + 18 + (35 * 2)})`)
+                .attr("fill", "#212028")
+                .attr("font-size", "14")
+                .text('Todesfälle: -');
+
+        ctx.map.text_new = svg.append('text')
+                .attr('transform', `translate(${m_off[0] + 20} ${m_off[1] + 18 + (35 * 3)})`)
+                .attr("fill", "#212028")
+                .attr("font-size", "14")
+                .text('Neu: -');
+    }
+
+    function svg_map_redraw(data_input, config) {
+        let data_selected = data_input[config.selection];
+
+        let data_key;
+        if (config.map_type_selection === 'died'){
+            data_key = 'num_laender_died';
+        } else if(config.map_type_selection === 'sum_100k'){
+            data_key = 'num_laender_100k_all';
+        } else if(config.map_type_selection === 'active_100k'){
+            data_key = 'num_laender_100k_active';
+        } else {
+            data_key = 'num_laender';
+        }
+
+        let num_min = data_input.reduce((out, de) => {
+            let val = Math.max(...de[data_key]);
+            return val < out ? val : out;
+        }, Number.MAX_SAFE_INTEGER);
+        let num_max = data_input.reduce((out, de) => {
+            let val = Math.max(...de[data_key]);
+            return val > out ? val : out;
+        }, Number.MIN_SAFE_INTEGER);
+
+        let color_lookup;
+        if (config.map_type_selection === 'died'){
+            let colInterpolator = d3.interpolate('#fcbfa8ff', '#dc3545');
+            color_lookup = d3.scaleSequential(colInterpolator).domain([0, num_max])
+        } else {
+            // rgb(233, 242, 251) - #e9f2fb
+            // rgb(8, 48, 107) - #08306b
+            //color_lookup = d3.scaleSequential([num_min, num_max], d3.interpolateBlues);
+            let colInterpolator = d3.interpolate('#e9f2fbff', '#08306b');
+            color_lookup = d3.scaleSequential(colInterpolator).domain([0, num_max])
+        }
+
+        ctx.map.laender_border.attr("fill", d => {
+            let land_idx = d.properties.iso - 1;
+            let land_num = data_selected[data_key][land_idx];
+            return color_lookup(land_num);
+        });
+
+        ctx.map.laender_text.text((d, i) => {
+            let land_idx = d.properties.iso - 1;
+            let land_num = data_selected[data_key][land_idx];
+            return land_num;
+        }).attr("fill", (d, i) => {
+            let land_idx = d.properties.iso - 1;
+            let land_num = data_selected[data_key][land_idx];
+            return (land_num / num_max) < 0.5 ? 'black' : 'white';
+        })
+        .attr("transform", function(d, i) {
+            let thisWidth = this.getComputedTextLength();
+            let thisHeight = this.getBoundingClientRect().height;
+
+            let xy = ctx.map.projection(d3.geoCentroid(d));
+            return `translate(${xy[0] + thisWidth/2}, ${xy[1] + 13/2})`
+        });
+
+        ctx.map.text_num.text(`Bestätigte: ${data_selected.num_all}`);
+        ctx.map.text_recovered.text(`Genesene: ${data_selected.num_recovered}`);
+        ctx.map.text_died.text(`Todesfälle: ${data_selected.num_died}`);
+        ctx.map.text_new.text(`Neu: ${data_selected.num_new}`);
+    }
+
+    function svg_pop_render(data_input, config) {
+        let svg = graphics.pop.svg;
+        let width = graphics.pop.width;
+
+        let number_by_row = Math.floor(width / 8.5);
+
+        let data_laender = [];
+        let data_selected = data_input[config.selection];
+        let data_latest = data_input[data_input.length -1];
+
+        function rescale(value) {
+            // We divide by 10 to improve performance
+            return Math.ceil(value / 10.0)
+        }
+
+        for (let i = 0; i < data_selected.num_laender.length; i++) {
+            data_laender.push({
+                'name': laender_info[i].name,
+                'sum_unscaled': data_selected.num_laender[i],
+                'sum': rescale(data_selected.num_laender[i]),
+                'recovered': rescale(data_selected.num_laender_recovered[i]),
+                'died': rescale(data_selected.num_laender_died[i]),
+                'new': rescale(data_selected.num_laender_new[i]),
+                'max': rescale(data_latest.num_laender[i])
+            });
+        }
+        data_laender = data_laender.sort((a, b) => (a.sum > b.sum) ? -1 : 1); // Order by cases
+
+        function calculate_offset(idx) {
+            let offset_total = 22;
+            let line_height = 10;
+            for(let i = 0; i < idx; i++){
+                //let max_data = data_laender[i].max;
+                let max_data = data_laender[i].sum;
+                let lines = Math.floor(max_data / number_by_row);
+                offset_total += 60;
+                offset_total += lines * line_height;
+            }
+            return offset_total;
+        }
+
+        // Resize svg
+        graphics.pop.height = calculate_offset(data_laender.length);
+        ctx.pop.resize();
+
+        // Draw graphic
+        ctx.pop.laender_group = svg.selectAll(".laender")
+            .data(data_laender);
+
+        ctx.pop.laender_group.exit().remove();
+
+        let laender_group_enter = ctx.pop.laender_group.enter()
+                        .append("g").attr("class", "laender");
+
+        laender_group_enter
+            .append("text")
+            .attr("transform", "translate(1, -10)")
+            .attr("class", "laender_label")
+            .attr("fill", "#212028")
+            .attr("font-family", "sans-serif")
+            .attr("font-size", "15.5");
+
+        ctx.pop.laender_group = ctx.pop.laender_group.merge(laender_group_enter);
+        ctx.pop.laender_group.attr('transform', (d, idx) => {
+            return `translate(10 ${calculate_offset(idx)})`;
+        });
+        ctx.pop.laender_group.select("text")
+            .text(d => `${d.name} (${d.sum_unscaled})`);
+
+        ctx.pop.items_group = ctx.pop.laender_group.selectAll('.items')
+            .data(function (d, idx) {
+                let figs = [];
+                for (let i = 0; i < d.died; i++) {
+                    figs.push({
+                        land: idx,
+                        type: 'died'
+                    });
+                }
+                for (let i = 0; i < d.recovered; i++) {
+                    figs.push({
+                        land: idx,
+                        type: 'recovered'
+                    });
+                }
+                for (let i = 0; i < (d.sum - d.recovered - d.died -  d.new); i++) {
+                    figs.push({
+                        land: idx,
+                        type: 'infected'
+                    });
+                }
+                for (let i = 0; i < d.new; i++) {
+                    figs.push({
+                        land: idx,
+                        type: 'new'
+                    });
+                }
+                return figs
+            });
+
+        ctx.pop.items_group.exit().style('display', 'none');
+
+        let items_group_enter = ctx.pop.items_group.enter()
+                        .append("g").attr("class", "items");
+
+        let scale = [0.9, 0.9];
+        items_group_enter
+            .attr('transform', (d, idx) => {
+                let line = Math.floor(idx / number_by_row);
+                let pos = idx - (number_by_row * line);
+                let off = (line % 2) === 0 ? 0 : 3;
+                return `translate(${8 * pos + off} ${10 * line}) scale(${scale[0]}, ${scale[1]})`;
+            });
+        items_group_enter.append('image')
+            .attr('href', url_image_base + 'man_a.png');
+
+        ctx.pop.items_group = ctx.pop.items_group.merge(items_group_enter);
+
+        ctx.pop.items_group
+            .style('display', null)
+            .select('image')
+            .attr('href', (d, i) => {
+                if (d.type === 'died') {
+                    return url_image_base + 'man_b.png';
+                } else if (d.type === 'recovered') {
+                    return url_image_base + 'man_c.png';
+                } else if (d.type === 'new') {
+                    return url_image_base + 'man_d.png';
+                } else {
+                    return url_image_base + 'man_a.png';
+                }
+            });
+    }
+
+    function svg_graph_main_render(data_input, config) {
+        let data_first = data_input[0]; //
+        let data_latest = data_input[data_input.length-1];
+        let data_selected = data_input[config.selection];
+        let data_selected_range = data_input.slice(0, config.selection);
+
+        let svg = graphics.g_main.svg;
+        let width = graphics.g_main.width;
+        let height = graphics.g_main.height;
+
+        let margin = {top: 25, right: 30, bottom: 25, left: 50};
+        let gwidth = width - margin.left - margin.right;
+        let gheight = height - margin.top - margin.bottom;
+
+
+        // We want to show time ahead of the selected date, thats our prediction range
+        let tdate_prediction_end = d3.timeDay.offset(data_selected.tdate, config.prediction_days);
+
+        // We define our scales, they scale with the selected date
+        let x = d3.scaleTime()
+            .range([0, gwidth]);
+            x.domain([data_first.tdate, tdate_prediction_end]);
+        let y = d3.scaleLinear()
+            .range([gheight, margin.top])
+            .domain([0, Math.max(data_selected.num_all, data_selected.num_tests)]);
+
+        // Draw both axis and their ticks
+        svg.selectAll(".axis-x")
+            .data([0])
+            .call(d3.axisBottom(x)
+                .ticks(4))
+            .enter()
+                .append("g")
+                .style('color', '#666666')
+                .attr("transform", `translate(${margin.left}, ${gheight})`)
+                .attr("class", "axis-x");
+
+        svg.selectAll(".axis-y")
+            .data([0])
+            .call(d3.axisLeft(y))
+            .enter()
+                .append("g")
+                .style('color', '#666666')
+                .attr("transform", `translate(${margin.left}, 0)`)
+                .attr("class", "axis-y");
+
+        // Define our draw groups and their colors
+        let groups = ['num_recovered', 'num_all', 'num_died'];
+        let color = d3.scaleOrdinal()
+            .domain(groups)
+            .range(['#888','#377eb8', '#ff3801']);
+
+
+        // Draw line0, the total number of case
+        svg.selectAll(".line0")
+            .data([data_selected_range])
+            .attr("d", d3.line()
+                .x(function(d) { return x(d.tdate) })
+                .y(function(d) { return y(d['num_all']) })
+            )
+            .enter()
+                .append("path")
+                    .attr("class", "line0")
+                    .style("stroke", color('num_all'))
+                    .attr("fill", "none")
+                    .attr("transform", `translate(${margin.left}, 0)`);
+
+        // Draw line1, which in fact is area, showing the number of recovered cases
+        svg.selectAll(".line1")
+            .data([data_selected_range])
+            .attr("d", d3.area()
+                .x(function (d, idx) { return x(d.tdate) })
+                .y0(y(0))
+                .y1(function (d) { return y(d['num_recovered'] + d['num_died']) })
+            )
+            .enter()
+                .append("path")
+                    .attr("class", "line1")
+                    //.style("stroke", color('num_tests'))
+                    .attr("fill", color('num_recovered'))
+                    .attr("transform", `translate(${margin.left}, 0)`)
+                    .attr("fill-opacity", 0.2)
+
+        // Draw line2, which in fact is area, showing the number of dead
+        svg.selectAll(".line2")
+            .data([data_selected_range])
+            .attr("d", d3.area()
+                .x(function (d, idx) { return x(d.tdate) })
+                .y0(y(0))
+                .y1(function (d) { return y(d['num_died']) })
+            )
+            .enter()
+                .append("path")
+                    .attr("class", "line2")
+                    //.style("stroke", color('num_tests'))
+                    .attr("fill", color('num_died'))
+                    .attr("transform", `translate(${margin.left}, 0)`)
+                    .attr("fill-opacity", 0.85)
+    }
+
+    function svg_graph_tests_render(data_input, config) {
+        let data_first = data_input[0];
+        let data_latest = data_input[data_input.length-1];
+        let data_selected = data_input[config.selection];
+        let data_selected_range = data_input.slice(0, config.selection);
+
+        let svg = graphics.g_tests.svg;
+        let width = graphics.g_tests.width;
+        let height = graphics.g_tests.height;
+
+        let margin = {top: 25, right: 30, bottom: 25, left: 50};
+        let gwidth = width - margin.left - margin.right;
+        let gheight = height - margin.top - margin.bottom;
+
+        let ratio_max = data_input.reduce((out, de) => {
+            let ratio = de['num_tests'] > 0 ? de['num_new'] / de['num_tests'] : 0.0
+            return ratio > out ? ratio : out;
+        }, Number.MIN_SAFE_INTEGER);
+
+        // We define our scales, they scale with the selected date
+        let x = d3.scaleTime()
+            .range([0, gwidth]);
+            x.domain([data_first.tdate, data_selected.tdate]);
+        let y = d3.scaleLinear()
+            .domain([0, ratio_max + ratio_max * 0.1])
+            .range([gheight, margin.top]);
+
+        // Draw both axis and their ticks
+        svg.selectAll(".axis-x")
+            .data([0])
+            .call(d3.axisBottom(x)
+                .ticks(4))
+            .enter()
+                .append("g")
+                .style('color', '#666666')
+                .attr("transform", `translate(${margin.left}, ${gheight})`)
+                .attr("class", "axis-x");
+
+        svg.selectAll(".axis-y")
+            .data([0])
+            .call(d3.axisLeft(y))
+            .enter()
+                .append("g")
+                .style('color', '#666666')
+                .attr("transform", `translate(${margin.left}, 0)`)
+                .attr("class", "axis-y");
+
+        // Define our draw groups and their colors
+        let groups = ['tests_vs_new'];
+        let color = d3.scaleOrdinal()
+            .domain(groups)
+            .range(['#75198a']);
+
+        // Draw line0, the total number of case
+        svg.selectAll(".line0")
+            .data([data_selected_range])
+            .attr("d", d3.line()
+                .x(function(d) { return x(d.tdate) })
+                .y(function(d) { return y((d['num_tests'] > 0) ? d['num_new'] / d['num_tests'] : 0.0) })
+            )
+            .enter()
+                .append("path")
+                    .attr("class", "line0")
+                    .style("stroke", color('tests_vs_new'))
+                    .attr("fill", "none")
+                    .attr("transform", `translate(${margin.left}, 0)`);
+
+        svg.selectAll(".line2")
+            .data([data_selected_range])
+            .attr("d", d3.area()
+                .x(function (d, idx) { return x(d.tdate) })
+                .y0(y(0))
+                .y1(function (d) { return y((d['num_tests'] > 0) ? d['num_new'] / d['num_tests'] : 0.0) })
+            )
+            .enter()
+                .append("path")
+                    .attr("class", "line2")
+                    //.style("stroke", color('num_tests'))
+                    .attr("fill", color('tests_vs_new'))
+                    .attr("transform", `translate(${margin.left}, 0)`)
+                    .attr("fill-opacity", 0.45)
+    }
+
+    function scatter_plot(graphics, dataX, dataY, spearmanElement=false, pearsonElement=false) {
+        let svg = graphics.svg;
+        let width = graphics.width;
+        let height = graphics.height;
+
+        let margin = {top: 25, right: 30, bottom: 25, left: 50};
+        let gwidth = width - margin.left - margin.right;
+        let gheight = height - margin.top - margin.bottom;
+
+        let x = d3.scaleLinear()
+            .range([0, gwidth]);
+        x.domain([Math.min(...dataX) - Math.min(...dataX) * 0.05, Math.max(...dataX) + Math.max(...dataX) * 0.05]);
+        let y = d3.scaleLinear()
+            .range([gheight, margin.top])
+            .domain([0, Math.max(...dataY)]);
+
+        // Draw both axis and their ticks
+        let axis = svg.selectAll(".scatteraxis-x")
+            .data([0])
+            .call(d3.axisBottom(x)
+                .ticks(4))
+            .enter()
+                .append("g")
+                .style('color', '#666666')
+                .attr("transform", `translate(${margin.left}, ${gheight})`)
+                .attr("class", "scatteraxis-x")
+                ;
+        /*axis.append("text")
+          .style("text-anchor", "middle")
+          .style("fill", "black")
+          .attr("transform", `translate(420, 30)`)
+          .text(`${config.scatter_tourism_selection}`)*/
+
+        svg.selectAll(".scatteraxis-y")
+            .data([0])
+            .call(d3.axisLeft(y))
+            .enter()
+                .append("g")
+                .style('color', '#666666')
+                .attr("transform", `translate(${margin.left}, 0)`)
+                .attr("class", "scatteraxis-y");
+
+        // Remove all former circles (necessary for update)
+        svg.selectAll("circle").remove();
+
+        // Draw the new circles
+        svg.selectAll(".dot")
+            .append('g')
+            .data(dataY)
+            .enter()
+            .append("circle")
+            .attr("cx", function(d, i){
+                return x(dataX[i])
+            })
+            .attr("cy", function(d){
+                return y(d)
+            })
+            .attr("class", function (d, i) {
+              return "myclass" + i;
+            })
+            .attr("transform", `translate(${margin.left}, 0)`)
+            .attr("r", 5)
+            .attr("stroke", "#000000")
+            .attr("stroke-width", 1)
+          .on("mouseover", function (d, i) {
+              let bar = svg.append("g")
+              .attr("transform", function (d, i) {
+                return "translate(0," + i * 50 + ")";
+              });
+
+            let text = bar.append("text")
+              .attr("class", "lable")
+              .style("text-anchor", "middle")
+              .attr("fill", "black")
+              .attr("x", d3.mouse(this)[0] + 50)
+              .attr("y", d3.mouse(this)[1] - 10)
+              .text(laender_info[i].name);
+            let bbox = text.node().getBBox();
+
+            bar.insert("rect", "text")
+              .attr("rx", 6)
+              .attr("ry", 6)
+              .attr("fill", "white")
+              .attr("x", bbox.x - 2.5)
+              .attr("y", bbox.y - 2.5)
+              .attr("width", bbox.width + 5)
+              .attr("height", bbox.height + 5)
+              .attr("padding", 20)
+              .attr("opacity", 1);
+
+            d3.select(this)
+              .each(() => this.parentNode.appendChild(this))
+              .style("stroke", "#0000ff")
+
+            d3.selectAll("circle.myclass" + i)
+              .each(() => this.parentNode.appendChild(this))
+              .style("stroke-width", 2)
+          })
+          .on("mouseout", function (d, i) {
+            svg.selectAll("text.lable").remove();
+            svg.selectAll("rect").remove();
+            d3.selectAll("circle.myclass" + i).style("stroke-width", 1)
+            d3.select(this).style("stroke", "#999999")
+          });
+
+        // Calculate the correlation coefficients
+        let spearmanCorrelation = spearmanCorrelationCoefficient(dataY, dataX);
+        let pearsonCorrelation = pearsonCorrelationCoefficient(dataY, dataX);
+
+        function checkCorrelation(value){
+          /*
+          Correlation taken from http://www.dmstat1.com/res/TheCorrelationCoefficientDefined.html and https://www.dummies.com/education/math/statistics/how-to-interpret-a-correlation-coefficient-r/
+          weakly:      0.0 - 0.3
+          moderatly:   0.3 - 0.7
+          strongly:    0.7 - 1
+         */
+          let absolute = Math.abs(value);
+          let negative = "";
+          let correlation_amount = "";
+          if (value < 0){
+            negative = "negative"
+          }
+
+          if (absolute < 0.3){
+              correlation_amount = "schwache bis keine";
+          } else if (absolute < 0.7){
+            correlation_amount = "mittlere";
+          } else {
+            correlation_amount = "starke";
+          }
+          return `Die Werte haben eine ${ correlation_amount}${ negative} Korrelation`;
+        }
+        if (spearmanCorrelation && spearmanElement) {
+          spearmanElement.innerHTML = spearmanCorrelation.toFixed(5) + ` (${checkCorrelation(spearmanCorrelation)})`;
+        } else {
+          spearmanElement.innerHTML = "Unbekannt (Konnte für die gegebenen Werte nicht berechnet werden)";
+        }
+        if (pearsonCorrelation && pearsonElement) {
+          pearsonElement.innerHTML = pearsonCorrelation.toFixed(5) + ` (${checkCorrelation(pearsonCorrelation)})`;
+        } else {
+          pearsonElement.innerHTML = "Unbekannt (Konnte für die gegebenen Werte nicht berechnet werden)";
+        }
+    }
+
+    function svg_scatter_compare_render(data_input, data_tourism, config){
+        let currentData, tourismData;
+        const data_selected = data_input[config.selection];
+
+        const sleepOvers = data_tourism.sleepOvers;
+        const arrivals = data_tourism.arrivals;
+        const accommodations = data_tourism.accommodations;
+
+        // Get the data depending on the drop-down menu
+        switch (config.scatter_type_selection) {
+            case "sum":
+                currentData = data_selected.num_laender;
+                break;
+            case "died":
+                currentData = data_selected.num_laender_died;
+                break;
+            case "sum_100k":
+                currentData = data_selected.num_laender_100k_all
+                break;
+        }
+
+        switch (config.scatter_tourism_selection) {
+          case "sleepOvers":
+            tourismData = sleepOvers;
+            break;
+          case "arrivals":
+            tourismData = arrivals;
+            break;
+          case "accommodations":
+            tourismData = accommodations;
+            break;
+        }
+
+        let spearmanElement = document.getElementById("spearman-coeff-input");
+        let pearsonElement = document.getElementById("pearson-coeff-input");
+
+        scatter_plot(graphics.g_compare, tourismData, currentData, spearmanElement, pearsonElement);
+    }
+
+    function svg_scatter_compare_render_demo(data_input, data_demo, config){
+        const data_selected = data_input[config.selection];
+
+        let dataX;
+        let dataY;
+
+        // Get the data depending on the drop-down menu
+        switch (config.scatter_type_selection) {
+            case "sum":
+                dataY = data_selected.num_laender;
+                break;
+            case "died":
+                dataY = data_selected.num_laender_died;
+                break;
+            case "sum_100k":
+                dataY = data_selected.num_laender_100k_all
+                break;
+        }
+
+        switch (config.scatter_demo_selection) {
+          case "averageAge":
+            dataX = data_demo.averageAge;
+            break;
+        }
+
+        let spearmanElement = document.getElementById("spearman-coeff-input-demo");
+        let pearsonElement = document.getElementById("pearson-coeff-input-demo");
+
+        scatter_plot(graphics.g_compare_demo, dataX, dataY, spearmanElement, pearsonElement);
+    }
+
+    svg_init();
+
+    Promise.all(promises).then(function(values) {
+        const data_input = values[0];
+        const data_map = values[1];
+        const data_tourism = values[2][0];
+        const data_demographics = values[3];
+
+        // Parse dates
+        data_input.forEach(r => {
+           r.tdate = d3.timeParse("%d.%m.%Y")(r.date);
+        });
+
+        function on_config_update(redraw) {
+            console.log('on_config_update: ');
+            console.log(config);
+
+            // Update slider label
+            $('#date-slider-text').text(data_input[config.selection].date);
+
+            svg_map_redraw(data_input, config);
+            svg_pop_render(data_input, config);
+            svg_graph_main_render(data_input, config);
+            svg_graph_tests_render(data_input, config);
+            svg_scatter_compare_render(data_input, data_tourism, config);
+            svg_scatter_compare_render_demo(data_input, data_demographics, config);
+        }
+
+        // Map dropdown handler
+        $('#map-type-dropdown-selection').find('a').click(function(e){
+            let selected_type = $(this).attr('selection-type');
+            let type_text = $('#map-type-dropdown-selection').find('a[selection-type=' + selected_type+']').text();
+            $('#map-type-dropdown').text(type_text);
+
+            config.map_type_selection = selected_type;
+            on_config_update();
+            e.preventDefault();
+        });
+
+        // Scatter dropdown handler
+        $('#scatter-type-dropdown-selection').find('a').click(function(e){
+            let selected_type = $(this).attr('selection-type');
+            let type_text = $('#scatter-type-dropdown-selection').find('a[selection-type=' + selected_type+']').text();
+            $('#scatter-type-dropdown').text(type_text);
+            config.scatter_type_selection = selected_type;
+            on_config_update();
+            e.preventDefault();
+        });
+
+      // Scatter dropdown handler
+      $('#scatter-tourism-dropdown-selection').find('a').click(function(e){
+        let selected_type = $(this).attr('selection-type');
+        let type_text = $('#scatter-tourism-dropdown-selection').find('a[selection-type=' + selected_type+']').text();
+        $('#scatter-tourism-dropdown').text(type_text);
+        config.scatter_tourism_selection = selected_type;
+        on_config_update();
+        e.preventDefault();
+      });
+
+
+      // Scatter dropdown handler
+        $('#scatter-demo-dropdown-selection').find('a').click(function(e){
+            let selected_type = $(this).attr('selection-type');
+            let type_text = $('#scatter-demo-dropdown-selection').find('a[selection-type=' + selected_type+']').text();
+            $('#scatter-demo-dropdown').text(type_text);
+            config.scatter_demo_selection = selected_type;
+            on_config_update();
+            e.preventDefault();
+        });
+
+        // Slider event handler
+        const elem_slider = $('#date-slider');
+        elem_slider[0].oninput = function() {
+            config.selection = this.value;
+            on_config_update();
+        };
+
+        // Manual date selection handler
+        jump_to_selection = function (selection) {
+            config.selection = selection;
+            elem_slider.val(selection)
+            on_config_update();
+        }
+
+        // Update slider attributes
+        elem_slider.attr('min', 0);
+        elem_slider.attr('max', data_input.length - 1);
+        elem_slider.val(elem_slider.attr('max'));
+        if (config.selection < 0)
+            config.selection = data_input.length - 1;
+
+        // Update latest data
+        $('#last-update-text').text(data_input[data_input.length-1].last_update);
+
+        svg_map_draw(data_map, data_input, config);
+        svg_pop_render(data_input, config);
+        svg_graph_main_render(data_input, config);
+        svg_graph_tests_render(data_input, config);
+        svg_scatter_compare_render(data_input, data_tourism, config);
+        svg_scatter_compare_render_demo(data_input, data_demographics, config);
+
+        on_config_update();
+    });
+</script>
+
+</body>
+</html>
